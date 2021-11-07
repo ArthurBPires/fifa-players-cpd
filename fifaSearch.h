@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
+#include <limits.h>
 
 #define ALPHABET_SIZE 27 //26 + space
 #define NAME_SIZE 80
 
 typedef struct DATA
 {
-	unsigned int sofifa_id;
+	unsigned long sofifa_id;
 	char name[NAME_SIZE];
 	char player_pos[3][4];
 	float rating;
@@ -18,7 +20,6 @@ typedef struct DATA
 typedef struct TRIENODE
 {
 	struct TRIENODE *children[ALPHABET_SIZE];
-
 	Data *data;
 }TrieNode;
 
@@ -26,35 +27,36 @@ typedef struct HASHTABLE {
 	Data *data;
     struct HASHTABLE *next;
 }HT;
-typedef struct KEYHASHTABLE {
-	int key;
-	Data *data;
-    struct KEYHASHTABLE *next;
-}userHT;
 
 
 enum keyType{fifaId,userId,pos,rating,tag};
-//typedef enum Keytype enum keyType;
 
-//Trie
+/*	Trie	*/
+
 TrieNode* newNode(void);
 void insertTrie(TrieNode *root, Data *data);
-Data *search(TrieNode *root, const char *key);
+Data* search(TrieNode *root, const char *key);
 int isTrieLeaf(TrieNode *root);
 void smartSearchRec(TrieNode *root, char *key);
 void smartSearch(TrieNode* root, char *key);
-//Hash
-void fifaIdinitHT(HT* hashTable, int m);
-void userIdinitHT(userHT* hashTable, int m);
-unsigned long long hash(int hash, enum keyType type, int m, int p);
-void fifaIdinsertHT(HT *hashTable, Data *data, int m);
-Data *fifaIdsearchHT(HT *hashTable, Data data, int m);
-void userIdInsertHT(userHT *hashTable, Data *data, const unsigned int key, int m);
-userHT *userIdsearchHT(userHT *hashTable, Data data, const unsigned int key, int m);
-void freeIdHTCell(HT *hashCell);
-void freeIdHT(HT *hashTable, int m);
-void printData(Data data);
-//Geral
-int chatoi(char c);
-void insertUsers(TrieNode *root, HT *fifaIdHT, userHT *userIdHT, int fifam, int userm, int p, char *fileName);
-void insertPlayers(TrieNode *root, HT *fifaIdHT, int m, int p, char *fileName);
+
+/*	Hash	*/
+
+void initHT(HT* hashTable, const unsigned long m);
+unsigned long hash(unsigned long hash, const enum keyType type, const unsigned long m, const int p);
+void fifaIdinsertHT(HT *hashTable, Data *data, const unsigned long m);
+Data* fifaIdsearchHT(HT *hashTable, Data data, const unsigned long m);
+void userIdInsertHT(HT *hashTable, Data *data, const unsigned long key);
+HT *userIdsearchHT(HT *hashTable, const unsigned long key);
+void freeHTCell(HT *hashCell);
+void freeHT(HT *hashTable, const unsigned long m);
+void printData(const Data data);
+
+/*	Geral	*/
+
+int chatoi(const char c);
+void insertUsers(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m, const char *fileName);
+void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const char *fileName);
+unsigned long* fineTune(char fileNames[][100]);
+void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m);
+void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]);
