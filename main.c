@@ -13,17 +13,18 @@
 int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
-    unsigned long m[] = {20000,USERS}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
-    char fileNames[][100] = {"players_clean2.csv","rating.csv"};
-    int p = 1728;
+    unsigned long m[] = {20000,USERS,20000}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
+    char fileNames[][100] = {"players_clean2.csv","rating.csv","tags.csv"};
     
     if(argc>1) argOpt(argc,argv,m,fileNames);
 
     HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
     HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
+    textHT *tagHT = (textHT*)malloc(m[tag]*sizeof(textHT));
     Data data;
     initHT(fifaIdHT,m[fifaId]);
     initHT(userIdHT,m[userId]);
+    textInitHT(tagHT,m[tag]);
     char *breakPoint,*cmd,*search,input[NAME_SIZE];
     clock_t time;
 
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
     time = clock();
     insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
     insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
+    insertTags(root,fifaIdHT,tagHT,m,fileNames[tag]);
     time = clock() - time;
     printf("Inicialiacao completa em %f segundos.\n", ((double)(time)/CLOCKS_PER_SEC));
 
@@ -41,41 +43,81 @@ int main(int argc, char **argv)
 
       for(int i=0;i<strlen(input);i++) input[i] = tolower(input[i]);
 
+      cmd = input;
+
       breakPoint = strchr(input,' ');
       if(breakPoint)
       {
           *breakPoint = '\0';
           search = ++breakPoint;
       }
-      cmd = input;
-
-      if(!strcmp("player",cmd)) smartSearch(root,search);
+      if(!strcmp("exit",cmd)) break;
+      else if(!strcmp("clear",cmd) || !strcmp("cls",cmd) || !strcmp("reset",cmd)) system("cls");
+      //Apartir daqui não se aceita input sem espaço
+      else if(!breakPoint) printf("Comando Invalido\n");
+      else if(!strcmp("player",cmd)) smartSearch(root,search);
+      //Apartir daqui não se aceita input sem argumento depois do espaço
+      else if(!strlen(search)) printf("Comando Invalido\n");
       else if(!strcmp("fifaid",cmd))
       {
-        data.sofifa_id = (unsigned long)atol(search);
+        data.sofifa_id = atol(search);
         Data *found = fifaIdsearchHT(fifaIdHT,data,m[fifaId]);
-        printf("sofifa_id\tname\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
-        if(found) printData(*found);
+        if(found)
+        {
+          printTableTop();
+          printData(*found);
+        }
         else printf("fifa_id nao encontrado.\n");
       }
       else if(!strcmp("user",cmd))
       {
+        HT *list = NULL;
         const unsigned long user = atol(search);
         if(user<1 || user>USERS) printf("user_id nao encontrado.\n");
         else
         {
-          HT *list = userIdsearchHT(userIdHT,user);
-          printf("sofifa_id\tname\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
-          while(list)
+          list = userIdsearchHT(userIdHT,user);
+          if(!list) printf("user_id nao encontrado.\n");
+          else
           {
-            printData(*(list->data));
-            list = list->next;
+            printTableTop();
+            while(list)
+            {
+              printData(*(list->data));
+              list = list->next;
+            }
           }
         }
       }
       else if(!strcmp("top10",cmd));
-      else if(!strcmp("tags",cmd));
-      else if(!strcmp("exit",cmd)) break;
+      else if(!strcmp("tags",cmd))
+      {
+        char *tagSearch;
+        char **tagList = NULL;
+        int i=0;
+        search++;
+        tagSearch = search;
+        if(strtok(search,"\'"))
+        {
+          while (tagSearch)
+          {
+            i++;
+            tagList = realloc(tagList,i*sizeof(char*));
+            char *newString = malloc(TAG_SIZE*sizeof(char));
+            strcpy(newString,tagSearch);
+            tagList[i-1] = newString;
+            strtok(NULL,"\'");
+            tagSearch = strtok(NULL,"\'");
+          }
+          multTagsearchHT(tagHT,tagList,m[tag],i);
+          while(i)
+          {
+            i--;
+            free(tagList[i]);
+            if(!i) free(tagList);
+          }
+        }
+      }
       else printf("Comando Invalido.\n");
 
     }while(1);

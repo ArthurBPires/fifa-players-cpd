@@ -102,7 +102,7 @@ void smartSearch(TrieNode* root, char *key)
  
         finder = finder->children[index];
     }
-	printf("sofifa_id\tname\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
+	printTableTop();
     if ((finder->data == NULL) && isLeaf)
 		printf("%s\t\n",key);
     else if (!isLeaf)
@@ -128,20 +128,28 @@ void initHT(HT* hashTable, const unsigned long m) {
 		hashTable[i].data = NULL;
 	}
 }
+void textInitHT(textHT* hashTable, const unsigned long m) {
+	for(int i = 0; i<m; i++)
+	{
+		hashTable[i].next = NULL;
+		hashTable[i].data = NULL;
+		strcpy(hashTable[i].text,"");
+	}
+}
 
 //Função geral de hashing
-unsigned long hash(unsigned long hash, const enum keyType type, const unsigned long m, const int p) {
+unsigned long hash(char *text, const enum keyType type, const unsigned long m, const int p) {
+	unsigned long long hash=0;	//Atualmente não está sendo usada por fifaId ou userId por buscarmos máxima velocidade de processamento.
 	switch (type)
 	{
 		case fifaId:
 		break;
 		case userId:
 		break;
-		case pos:
-		break;
-		case rating:
-		break;
 		case tag:
+		case pos:
+			for (int i = 0; i < strlen(text); i++)
+      			hash = (hash * p + (text[i] - 'a' + 1));
 		break;
 		default:
 			printf("Erro ao iniciar HashTable\n");
@@ -149,9 +157,9 @@ unsigned long hash(unsigned long hash, const enum keyType type, const unsigned l
 	}
 	return hash % m;
 }
-//Insere os dados no final da corrent correspondente ao hash, caso eles ainda não tenham sido inseridos.
+//Insere os dados no final da corrente correspondente ao hash, caso eles ainda não tenham sido inseridos.
 void fifaIdInsertHT(HT *hashTable, Data *data, const unsigned long m) {
-	HT *x = &hashTable[  hash(data->sofifa_id,fifaId,m,0) ];
+	HT *x = &hashTable[data->sofifa_id % m];
 	while (x->next && (x->data->sofifa_id != data->sofifa_id)) x = x->next;
 	if (!x->data) x->data = data;
 	else if (x->next != NULL) return;
@@ -163,7 +171,7 @@ void fifaIdInsertHT(HT *hashTable, Data *data, const unsigned long m) {
 }
 //Retorna NULL caso não encontre, retorna o ponteiro para os dados caso contrário.
 Data *fifaIdsearchHT(HT *hashTable, Data data, unsigned long m) {
-	HT *x = &hashTable[ hash(data.sofifa_id,fifaId,m,0) ];
+	HT *x = &hashTable[data.sofifa_id % m];
 	for (unsigned long n = 0; x->next && (x->data->sofifa_id != data.sofifa_id); x = x->next, n++);
 	if(!x->data || (x->data->sofifa_id != data.sofifa_id)) return NULL;
 	return x->data;
@@ -176,10 +184,62 @@ void userIdInsertHT(HT *hashTable, Data *data, const unsigned long key) {
 	hashTable[key].next->next = x;
 }
 /*Retorna o primeiro nodo de dados do usuário. Para ler todos os nodos do usuário, basta usar 
-o nodo retornado e seguir a corrente de ponteiros até o fim	*/
+o nodo retornado e seguir a corrente de ponteiros até o fim. Retorna NULL caso não encontre	*/
 HT *userIdsearchHT(HT *hashTable, const unsigned long key) {
 	return hashTable[key-1].next;
 }
+//Insere os dados no final da corrente correspondente a key, caso eles ainda não tenham sido inseridos.
+void tagInsertHT(textHT *hashTable, char *key, Data *data, const unsigned long m) {
+	textHT *x = &hashTable[ hash(key,tag,m,31) ];
+	while (x->next && ((x->data->sofifa_id != data->sofifa_id) || strcmp(x->text,key))) x = x->next;
+	if (!x->data)
+	{
+		x->data = data;
+		strcpy(x->text,key);
+	}
+	else if (x->next || (x->data->sofifa_id == data->sofifa_id)) return;
+	else {
+		x->next = (textHT*)malloc(sizeof(textHT));
+		x->next->data = data;
+		strcpy(x->next->text,key);
+		x->next->next = NULL;
+	}
+}
+/*Retorna o primeiro nodo de dados correspondente a tag. Para ler todos os nodos, basta usar 
+o nodo retornado e seguir a corrente de ponteiros até o fim ou até chegar em outra tag*/
+textHT *tagsearchHT(textHT *hashTable, char *key, const unsigned long m) {
+	textHT *x = &hashTable[ hash(key,tag,m,31) ];
+	while(x && strcmp(x->text,key)) x = x->next;
+	return x;
+}
+void multTagsearchHT(textHT *hashTable, char **tagList, const unsigned long m, const int n) {
+	textHT *found,*alsoFound;
+	int flagFound;
+
+	if(!n) return;
+
+	found = tagsearchHT(hashTable,tagList[0],m);
+	if(found) printTableTop();
+	while(found && !strcmp(found->text,tagList[0]))
+	{
+		flagFound = 1;
+		for(int i=1;i<n;i++)
+		{
+			alsoFound = tagsearchHT(hashTable,tagList[i],m);
+			
+			while(alsoFound && !strcmp(alsoFound->text,tagList[i]) && (alsoFound->data->sofifa_id != found->data->sofifa_id))
+				alsoFound = alsoFound->next;
+			if(!alsoFound || (alsoFound->data->sofifa_id != found->data->sofifa_id))
+			{
+				flagFound = 0;
+				break;
+			}
+		}
+		if(flagFound || n==1) printData(*(found->data));
+		found = found->next;
+	}
+}
+
 //Libera o espaço de uma corrente de celulas
 void freeHTCell(HT *hashCell) {
   if(hashCell->next != NULL) freeHTCell(hashCell->next);
@@ -200,15 +260,22 @@ int chatoi(const char c)
 	if (c >= 'a' && c <= 'z') return ((int)c - (int)'a');
 	else return (ALPHABET_SIZE-1);
 }
+//Printa o cabeçalho da tabela de dados
+void printTableTop()
+{
+	printf("sofifa_id\tname\t\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
+}
 //Printa os dados de forma tabelada
 void printData(const Data data)
 {
 	printf("%-12lu\t",data.sofifa_id);
-	printf("%-40s\t",data.name);
+	printf("%-50s\t",data.name);
 	if((data.player_pos[1][0] != 0) && (data.player_pos[2][0] != 0)) printf("%s, %s, %-10s\t",data.player_pos[0],data.player_pos[1],data.player_pos[2]);
 	else if(data.player_pos[1][0] != 0) printf("%s, %-12s\t",data.player_pos[0],data.player_pos[1]);
 	else printf("%-18s\t",data.player_pos[0]);
-	printf("%1.6f\t",(float)(data.rating/data.count));
+	if(data.count)
+		printf("%1.6f\t",(float)(data.rating/data.count));
+	else printf("%1.6f\t",0);
 	printf("%d\n",data.count);
 }
 //insere os dados sobre os usuários
@@ -295,6 +362,36 @@ void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const c
     }
 	fclose(players);
 }
+//insere os dados sobre as tags
+void insertTags(TrieNode *root, HT *fifaIdHT, textHT *tagHT, const unsigned long *m, const char *fileName)
+{
+	Data *data;
+	Data search;
+	FILE *tags = fopen(fileName,"r");
+	char line[256];
+	char *second,*third;
+	int i;
+
+	fgets(line, 256, tags);
+    while (fgets(line, 256, tags))
+    {
+		strtok(line,",");
+        second = strtok(NULL,",");
+		third = strtok(NULL,",");
+
+		*--third = '\0';
+		third++;
+		strtok(third,"\n");
+		for (i = 0; i < strlen(third); i++) third[i] = tolower(third[i]);
+
+		search.sofifa_id = (unsigned long)atol(second);
+
+		data = fifaIdsearchHT(fifaIdHT,search,m[fifaId]);
+
+		tagInsertHT(tagHT,third,data,m[tag]);
+    }
+	fclose(tags);
+}
 //Acha os melhores valores para m
 unsigned long *fineTune(char fileNames[][100])
 {
@@ -361,7 +458,7 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 	{
 		if(!strcmp("-f",argv[i]) || !strcmp("-fine-tune",argv[i]))
 			flagf++;
-		else if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+2)))
+		else if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+3)))
 		{
 			flagp[0]++;
 			flagp[1]=i;
@@ -371,6 +468,7 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 	{
 	strcpy(fileNames[fifaId],argv[flagp[1]+1]);
 	strcpy(fileNames[userId],argv[flagp[1]+2]);
+	strcpy(fileNames[tag],argv[flagp[1]+3]);
 	}
 	if(flagf)
 	{
