@@ -7,33 +7,30 @@
  * - Pesquisa por melhores jogadores um posição x (top<N> ‘<position>’): $ top10 ‘ST’
  * - Pesquisa por tags (tags <list of tags>): $ tags ‘Brazil’ ‘Dribbler’
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <time.h>
 #include "fifaSearch.h"
+#define USERS 138493  //138493 users no total
 
-#define NAME_SIZE 80
-
-int main(void)
+int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
-    int fifam = 7507;
-    int userm = 100000;
+    unsigned long m[] = {20000,USERS}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
+    char fileNames[][100] = {"players_clean2.csv","rating.csv"};
     int p = 1728;
-    HT *fifaIdHT = (HT*)malloc(fifam*sizeof(HT));
-    userHT *userIdHT = (userHT*)malloc(userm*sizeof(userHT));
+    
+    if(argc>1) argOpt(argc,argv,m,fileNames);
+
+    HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
+    HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
     Data data;
-    fifaIdinitHT(fifaIdHT,fifam);
-    userIdinitHT(userIdHT,userm);
+    initHT(fifaIdHT,m[fifaId]);
+    initHT(userIdHT,m[userId]);
     char *breakPoint,*cmd,*search,input[NAME_SIZE];
     clock_t time;
 
     printf("Inicializando dados...\n");
     time = clock();
-    insertPlayers(root,fifaIdHT,fifam,p,"players_clean2.csv");
-    insertUsers(root,fifaIdHT,userIdHT,fifam,userm,p,"rating.csv");
+    insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
+    insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
     time = clock() - time;
     printf("Inicialiacao completa em %f segundos.\n", ((double)(time)/CLOCKS_PER_SEC));
 
@@ -55,23 +52,24 @@ int main(void)
       if(!strcmp("player",cmd)) smartSearch(root,search);
       else if(!strcmp("fifaid",cmd))
       {
-        data.sofifa_id = atoi(search);
-        Data *found = fifaIdsearchHT(fifaIdHT,data,fifam);
+        data.sofifa_id = (unsigned long)atol(search);
+        Data *found = fifaIdsearchHT(fifaIdHT,data,m[fifaId]);
         printf("sofifa_id\tname\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
         if(found) printData(*found);
         else printf("fifa_id nao encontrado.\n");
       }
       else if(!strcmp("user",cmd))
       {
-        userHT *found = userIdsearchHT(userIdHT,data,atoi(search),userm);
-        if(!found) printf("user_id nao encontrado.\n");
+        const unsigned long user = atol(search);
+        if(user<1 || user>USERS) printf("user_id nao encontrado.\n");
         else
         {
+          HT *list = userIdsearchHT(userIdHT,user);
           printf("sofifa_id\tname\t\t\t\t\t\tplayer_positions\trating\t\tcount\n");
-          while(found && found->key == atoi(search))
+          while(list)
           {
-            printData(*(found->data));
-            found = found->next;
+            printData(*(list->data));
+            list = list->next;
           }
         }
       }
@@ -81,6 +79,8 @@ int main(void)
       else printf("Comando Invalido.\n");
 
     }while(1);
+
+    thanoSnap(root,fifaIdHT,userIdHT,m);
 
     return 0;
 }
