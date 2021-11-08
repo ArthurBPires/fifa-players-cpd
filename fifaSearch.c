@@ -275,7 +275,7 @@ void printData(const Data data)
 	else printf("%-18s\t",data.player_pos[0]);
 	if(data.count)
 		printf("%1.6f\t",(float)(data.rating/data.count));
-	else printf("%1.6f\t",0);
+	else printf("%1.6f\t",(float)0);
 	printf("%d\n",data.count);
 }
 //insere os dados sobre os usuários

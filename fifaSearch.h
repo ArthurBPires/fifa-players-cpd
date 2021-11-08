@@ -1,12 +1,14 @@
-#ifndef _WIN32
-#define system("cls") system("clear")
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <limits.h>
+#ifdef _WIN32
+#include <processthreadsapi.h>
+#elif defined __APPLE__
+printf("Sistema nao suportado\n");
+#endif
 
 #define ALPHABET_SIZE 27 //26 + space
 #define NAME_SIZE 80

@@ -10,6 +10,20 @@
 #include "fifaSearch.h"
 #define USERS 138493  //138493 users no total
 
+#ifdef _WIN32
+    double timeCPU(){
+      FILETIME a,b,c,d;
+      if (GetProcessTimes(GetCurrentProcess(),&a,&b,&c,&d) != 0){
+          //  Retorna o tempo total passado
+          return
+              (double)(d.dwLowDateTime |
+              ((unsigned long long)d.dwHighDateTime << 32)) * 0.0000001;
+      }else
+          return 0;
+    }
+#endif
+
+
 int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
@@ -26,15 +40,37 @@ int main(int argc, char **argv)
     initHT(userIdHT,m[userId]);
     textInitHT(tagHT,m[tag]);
     char *breakPoint,*cmd,*search,input[NAME_SIZE];
-    clock_t time;
 
-    printf("Inicializando dados...\n");
+    printf("Inicializando dados...\n"); //Recorde: 7,28125 em Clang -Ofast
+    double timeElapsed;
+    #ifdef _WIN32
+    double begin,end;
+    begin = timeCPU();
+    #else
+    struct timespec begin, end;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin);
+    #endif
+
+
+    clock_t time;
     time = clock();
     insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
     insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
     insertTags(root,fifaIdHT,tagHT,m,fileNames[tag]);
     time = clock() - time;
-    printf("Inicialiacao completa em %f segundos.\n", ((double)(time)/CLOCKS_PER_SEC));
+
+    #ifdef _WIN32
+    end = timeCPU();
+    timeElapsed = end - begin;
+    #else
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+    long seconds = end.tv_sec - begin.tv_sec;
+    long nanoseconds = end.tv_nsec - begin.tv_nsec;
+    timeElapsed = seconds + nanoseconds*1e-9;
+    #endif
+
+
+    printf("Inicialiacao completa em %f segundos.\n", timeElapsed);
 
     do
     {
@@ -52,7 +88,14 @@ int main(int argc, char **argv)
           search = ++breakPoint;
       }
       if(!strcmp("exit",cmd)) break;
-      else if(!strcmp("clear",cmd) || !strcmp("cls",cmd) || !strcmp("reset",cmd)) system("cls");
+      else if(!strcmp("clear",cmd) || !strcmp("cls",cmd) || !strcmp("reset",cmd))
+      {
+        #ifdef _WIN32
+        system("cls");
+        #else
+        system("clear");
+        #endif
+      }
       //Apartir daqui não se aceita input sem espaço
       else if(!breakPoint) printf("Comando Invalido\n");
       else if(!strcmp("player",cmd)) smartSearch(root,search);
