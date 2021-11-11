@@ -47,26 +47,19 @@ int main(int argc, char **argv)
     double begin,end;
     begin = timeCPU();
     #else
-    struct timespec begin, end;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin);
+    clock_t begin = clock();
     #endif
 
-
-    clock_t time;
-    time = clock();
     insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
     insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
     insertTags(root,fifaIdHT,tagHT,m,fileNames[tag]);
-    time = clock() - time;
 
     #ifdef _WIN32
     end = timeCPU();
     timeElapsed = end - begin;
     #else
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
-    long seconds = end.tv_sec - begin.tv_sec;
-    long nanoseconds = end.tv_nsec - begin.tv_nsec;
-    timeElapsed = seconds + nanoseconds*1e-9;
+    clock_t end = clock();
+    timeElapsed = (double)(end - begin)/CLOCKS_PER_SEC;
     #endif
 
 
@@ -77,7 +70,8 @@ int main(int argc, char **argv)
       fgets(input, sizeof(input), stdin);
       input[strlen(input)-1] = '\0'; //Retira o '/n' do final
 
-      for(int i=0;i<strlen(input);i++) input[i] = tolower(input[i]);
+      for(int i=0;i<strlen(input);i++) 
+        input[i] = tolower(input[i]);
 
       cmd = input;
 

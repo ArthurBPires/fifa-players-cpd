@@ -6,8 +6,6 @@
 #include <limits.h>
 #ifdef _WIN32
 #include <processthreadsapi.h>
-#elif defined __APPLE__
-printf("Sistema nao suportado\n");
 #endif
 
 #define ALPHABET_SIZE 27 //26 + space
