@@ -29,12 +29,12 @@ typedef struct TRIENODE
 
 typedef struct HASHTABLE {
 	Data *data;
-    struct HASHTABLE *next;
+   struct HASHTABLE *next;
 }HT;
 typedef struct TEXTHASHTABLE {
 	char text[TAG_SIZE];
 	Data *data;
-    struct TEXTHASHTABLE *next;
+   struct TEXTHASHTABLE *next;
 }textHT;
 
 
@@ -75,3 +75,4 @@ void insertTags(TrieNode *root, HT *fifaIdHT, textHT *tagHT, const unsigned long
 unsigned long* fineTune(char fileNames[][100]);
 void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m);
 void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]);
+//void quicksort(Data data[], int low, int high);

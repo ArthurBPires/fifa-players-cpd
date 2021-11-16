@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
     unsigned long m[] = {20000,USERS,20000}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
-    char fileNames[][100] = {"players_clean2.csv","rating.csv","tags.csv"};
+    char fileNames[][100] = {"players.csv","rating.csv","tags.csv"};
     
     if(argc>1) argOpt(argc,argv,m,fileNames);
 
@@ -116,17 +116,48 @@ int main(int argc, char **argv)
           list = userIdsearchHT(userIdHT,user);
           if(!list) printf("user_id nao encontrado.\n");
           else
-          {
-            printTableTop();
-            while(list)
-            {
-              printData(*(list->data));
-              list = list->next;
-            }
+          {	 
+				HT *listCount = list;
+				Data *maior = list->data;
+				printTableTop();
+				for(int i=0 ; i<20 ; i++){
+					listCount = list;
+					maior = list->data;
+					while(listCount){
+						if((float)(listCount->data->rating/listCount->data->count) > (float)(maior->rating/maior->count)){
+							maior = listCount->data;
+						}
+						listCount = listCount->next;
+					}
+					printData(*(maior));
+					maior->rating = 0;
+				}
+				
+				// HT *listCount = list;
+				// int listSize = 0; 
+            // while(listCount)
+            // {
+				// 	listSize ++;
+				// 	listCount = listCount->next;
+            // }
+
+				// Data *data;
+				// data = (Data*)malloc(sizeof(Data)*listSize);
+				// for(int i=0 ; i<listSize ; i++){
+				// 	data[i] = *(list->data);
+				// 	list = list->next;
+				// }
+				// quicksort(data, 0, listSize);
+				// printTableTop();
+				// for( int i=0 ; i<listSize ; i++){
+				// 	printData(data[i]);
+				// }
           }
         }
       }
-      else if(!strcmp("top10",cmd));
+      else if(!strcmp("top10",cmd)){
+			printf("top10 aham falta fazer\n");
+		}
       else if(!strcmp("tags",cmd))
       {
         char *tagSearch;

@@ -484,3 +484,56 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 	abort();
 	}
 }
+
+// void swapData(Data *d1, Data *d2) {
+// 	Data temp;
+// 	temp.count = d1->count;
+// 	temp.sofifa_id = d1->sofifa_id;
+// 	strcpy(temp.name, d1->name);
+// 	temp.rating = d1->rating;
+// 	strcpy(temp.player_pos[0], d1->player_pos[0]);
+// 	strcpy(temp.player_pos[1], d1->player_pos[1]);
+// 	strcpy(temp.player_pos[2], d1->player_pos[2]);
+
+// 	d1->count = d2->count;
+// 	d1->sofifa_id = d2->sofifa_id;
+// 	strcpy(d1->name, d2->name);
+// 	d1->rating = d2->rating;
+// 	strcpy(d1->player_pos[0], d2->player_pos[0]);
+// 	strcpy(d1->player_pos[1], d2->player_pos[1]);
+// 	strcpy(d1->player_pos[2], d2->player_pos[2]);
+
+// 	d2->count = temp.count;
+// 	d2->sofifa_id = temp.sofifa_id;
+// 	strcpy(d2->name, temp.name);
+// 	d2->rating = temp.rating;
+// 	strcpy(d2->player_pos[0], temp.player_pos[0]);
+// 	strcpy(d2->player_pos[1], temp.player_pos[1]);
+// 	strcpy(d2->player_pos[2], temp.player_pos[2]);
+
+// }
+
+// int partition(Data data[], int low, int high){
+//     Data pivot = data[high];
+//     int i = low - 1;
+ 
+//     for (int j = low; j <= high- 1; j++)
+//     {
+//         if (data[j].rating <= pivot.rating)
+//         {
+//             i++;
+//             swapData(&data[i], &data[j]);
+//         }
+//     }
+//     swapData(&data[i + 1], &data[high]);
+//     return (i + 1);
+// }
+
+// void quicksort(Data data[], int low, int high){
+//     if (low < high)
+//     {
+//         int pi = partition(data, low, high);
+//         quicksort(data, low, pi - 1);
+//         quicksort(data, pi + 1, high);
+//     }
+// }
