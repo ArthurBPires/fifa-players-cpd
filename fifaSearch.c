@@ -305,12 +305,26 @@ void insertUsers(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long
 		data->rating += (float)atof(third);
 		data->count++;
 
-		//printf("data %p\n", data);
 
 		userIdInsertHT(userIdHT,data,(const unsigned long)(atol(first)-1));
     }
 	fclose(users);
 }
+
+void clearStringPos( char str[] ){
+    int i,j;
+    i = 0;
+    while(i<strlen(str))
+    {
+        if (str[i]==' ' || str[i]==',') 
+        { 
+            for (j=i; j<strlen(str); j++)
+                str[j]=str[j+1];   
+        } else i++;
+    }
+}
+
+
 //insere os dados sobre os jogadores
 void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const char *fileName)
 {
@@ -329,7 +343,7 @@ void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const c
 		data->player_pos[2][0] = 0;
 
 		first = strtok(line,",");
-        second = strtok(NULL,",");
+      second = strtok(NULL,",");
 		third = strtok(NULL,",");
 
 		*--second = *--third = '\0';
@@ -349,13 +363,24 @@ void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const c
 			else
 			{
 				strtok(fifth,"\"");
+				// if(fifth)printf("before: )%s(",fifth);
+				clearStringPos(fifth);
+				// if(fifth)printf("after: )%s(\n",fifth);
 				strcpy(&(data->player_pos[2][0]),fifth);
 			}
+			// if(fourth)printf("before: )%s(",fourth);
+			clearStringPos(fourth);
+			// if(fourth)printf("after: )%s(\n",fourth);
 			strcpy(&(data->player_pos[1][0]),fourth);
 		}
+		// if(third)printf("before: )%s(",third);
+		clearStringPos(third);
+		// if(third)printf("after: )%s(\n",third);
 		strcpy(&(data->player_pos[0][0]),third);
 		data->count = 0;
 		data->rating = 0;
+
+		// INSERT IN NEW LSE
 
 		insertTrie(root,data);
 		fifaIdInsertHT(fifaIdHT,data,m[fifaId]);
@@ -513,27 +538,49 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 
 // }
 
-// int partition(Data data[], int low, int high){
-//     Data pivot = data[high];
-//     int i = low - 1;
- 
-//     for (int j = low; j <= high- 1; j++)
-//     {
-//         if (data[j].rating <= pivot.rating)
-//         {
-//             i++;
-//             swapData(&data[i], &data[j]);
-//         }
-//     }
-//     swapData(&data[i + 1], &data[high]);
-//     return (i + 1);
-// }
+// Para a funcao quicksort
+void swapData(Data** vet, int p1, int p2){
+	Data* aux = vet[p1];
+	vet[p1] = vet[p2];
+	vet[p2] = aux;
+}
+// Para a funcao quicksort
+int partition(Data **data, int low, int high){
+    Data *pivot = data[high];
+    int i = low - 1;
+	 
+    for (int j = low; j <= high-1; j++)
+    {
+        if (data[j]->rating/data[j]->count >= pivot->rating/pivot->count)
+        {
+            i++;
+            swapData(data, i, j);
+        }
+    }
+    swapData(data, i + 1,high);
+    return (i + 1);
+}
 
-// void quicksort(Data data[], int low, int high){
-//     if (low < high)
-//     {
-//         int pi = partition(data, low, high);
-//         quicksort(data, low, pi - 1);
-//         quicksort(data, pi + 1, high);
-//     }
-// }
+// quicksort que ordena um vetor de ponteiros para Data
+void quicksort(Data **data, int low, int high){
+    if (low < high)
+    {
+        int pi = partition(data, low, high);
+        quicksort(data, low, pi - 1);
+        quicksort(data, pi + 1, high);
+    }
+}
+
+// Olha para um Data e verifica a presenca de um TAG
+int hasTag(Data* data, char* tag){
+	if( !strcmp( data->player_pos[0], tag) || !strcmp( data->player_pos[1], tag) || !strcmp( data->player_pos[2], tag)) return 1;
+	return 0;
+}
+
+void stringUpperCase(char* str){
+	for (int i = 0; str[i]!='\0'; i++) {
+   	if(str[i] >= 'a' && str[i] <= 'z') {
+      	str[i] = str[i] -32;
+   	}
+	}
+}

@@ -117,23 +117,8 @@ int main(int argc, char **argv)
           if(!list) printf("user_id nao encontrado.\n");
           else
           {	 
-				HT *listCount = list;
-				Data *maior = list->data;
-				printTableTop();
-				for(int i=0 ; i<20 ; i++){
-					listCount = list;
-					maior = list->data;
-					while(listCount){
-						if((float)(listCount->data->rating/listCount->data->count) > (float)(maior->rating/maior->count)){
-							maior = listCount->data;
-						}
-						listCount = listCount->next;
-					}
-					printData(*(maior));
-					maior->rating = 0;
-				}
-				
 				// HT *listCount = list;
+				
 				// int listSize = 0; 
             // while(listCount)
             // {
@@ -147,16 +132,86 @@ int main(int argc, char **argv)
 				// 	data[i] = *(list->data);
 				// 	list = list->next;
 				// }
-				// quicksort(data, 0, listSize);
+
+				// quicksort(data, 0, listSize-1);
+
 				// printTableTop();
-				// for( int i=0 ; i<listSize ; i++){
+				// for( int i=0 ; i<20 ; i++){
 				// 	printData(data[i]);
 				// }
+
+				// free(data);
           }
         }
       }
-      else if(!strcmp("top10",cmd)){
-			printf("top10 aham falta fazer\n");
+      else if(1 || cmd[0]=='t' && cmd[1]=='o' && cmd[2]=='p'){
+			// coloca em many a quantidade de jogadores
+			char playersAmount[10];
+			int i;
+			for ( i=3 ; i<strlen(cmd); i++){
+				playersAmount[i-3] = cmd[i];
+			}
+			playersAmount[i-1] = '\0';
+			int many = atoi(playersAmount);
+
+			//aloca um vetor de ponteiros para Data inicializados em NULL
+			Data** bestNPlayers = (Data**)malloc(sizeof(Data*) * many);
+			for (int i=0 ; i<many ; i++){
+				bestNPlayers[i] = NULL;
+			}
+
+			//Percorre a HT com as informações relizando filtragens
+			char pos[4];
+			strcpy(pos, search);
+			stringUpperCase(pos);
+			// percorre o vetor HT
+			for(int i=0 ; i<m[fifaId] ; i++){
+				if(fifaIdHT[i].data){
+					HT *player = &fifaIdHT[i];
+					// Percorre a LSE que eh cada elemento da HT
+					while(player){
+						// player eh o jogador atual, se for da posicao certa e tiver mais de 1000 avaliacoes continuia, continua
+						if( hasTag(player->data, pos) && player->data->count >= 1000){
+							// Agora o player tentara ser inserido no vetor com os 10 maiores ratings
+							int insertPos = -1;// esse int guarda a pos de insercao, se manter-se -1 nao insere
+							int l;
+							// se algum elemento do vetor dos 10 maiores raitings for NULL, ele eh inserido
+							for ( l=0 ; l<many ; l++){
+								if(bestNPlayers[l]==NULL){
+									insertPos= l;
+									l=many+1;
+								}
+							}
+							// se nenhum for null, eh consultado se algum elemento do vetor dos 10 maiores eh menor que ele
+							if(insertPos == -1){
+								int menor = 0;
+								// busca o menor
+								for(int k=0 ;k<many ;k++){
+									if(bestNPlayers[menor]->rating/bestNPlayers[menor]->count > bestNPlayers[k]->rating/bestNPlayers[k]->count)
+										menor = k; 
+								}
+								// se o player tiver o rating maior que o menor eh inserido na posicao
+								if(player->data->rating/player->data->count > bestNPlayers[menor]->rating/bestNPlayers[menor]->count){
+									insertPos = menor;
+								}
+							}
+							// realiza a isercao se possivel
+							if(insertPos != -1){
+								bestNPlayers[insertPos] = player->data;
+							}
+						}
+						player = player->next;
+					}
+				}
+			}
+			// imprime os dados na tela de forma ordenada
+			printTableTop();
+			quicksort(bestNPlayers, 0, many-1);
+			for(int i=0 ; i<many ; i++){
+				if(bestNPlayers[i])
+					printData(*bestNPlayers[i]);
+			}
+			free(bestNPlayers);
 		}
       else if(!strcmp("tags",cmd))
       {
