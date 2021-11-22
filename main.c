@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     unsigned long m[] = {20000,USERS,20000}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
     char fileNames[][100] = {"players.csv","rating.csv","tags.csv"};
     
-    //if(argc>1) argOpt(argc,argv,m,fileNames);
+    if(argc>1) argOpt(argc,argv,m,fileNames);
 
     HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
     HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
@@ -113,32 +113,37 @@ int main(int argc, char **argv)
         }
         else printf("fifa_id nao encontrado.\n");
       }
-      else if(!strcmp("user",cmd))
-      {
-        HT *list = NULL;
-        const unsigned long user = atol(search);
-        if(user<1 || user>USERS) printf("user_id nao encontrado.\n");
-        else
-        {
+		else if (!strcmp("user", cmd))
+		{
+			const unsigned long user = atol(search);
+			if (user < 1 || user > USERS)
+				printf("user_id nao encontrado.\n");
+			else
+			{
 				printTableTop(0);
 				printf("\tuser_rating\n");
-				
-				if(users[user].id != -1){
-					for(int i=0 ; i<EVALS ; i++){
-						if(users[user].evals[i].sofifa_id != 0){
 
-							quickSortEval(users[user].evals, 0,EVALS-1);
+				if (users[user].id != -1)
+				{
+					for (int i = 0; i < EVALS; i++)
+					{
+						if (users[user].evals[i].sofifa_id != 0)
+						{
 
-							printData( *fifaIdsearchHTbysofifaID(fifaIdHT,users[user].evals[i].sofifa_id,m[fifaId]),0);
+							quickSortEval(users[user].evals, 0, EVALS - 1);
+
+							printData(*fifaIdsearchHTbysofifaID(fifaIdHT, users[user].evals[i].sofifa_id, m[fifaId]), 0);
 							printf("\t%.1f\n", users[user].evals[i].rating);
 						}
 					}
-				}else{
+				}
+				else
+				{
 					printf("user_id nao encontrado.\n");
 				}
-        }
-      }
-      else if(1 || cmd[0]=='t' && cmd[1]=='o' && cmd[2]=='p'){
+			}
+		}
+		else if(1 || cmd[0]=='t' && cmd[1]=='o' && cmd[2]=='p'){
 			// coloca em many a quantidade de jogadores
 			char playersAmount[10];
 			int i;
