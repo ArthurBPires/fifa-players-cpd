@@ -303,7 +303,7 @@ void insertEval(User* users, int id, unsigned long sofifa_id, float rating){
 		int menor = 0;
 		for(int i=0 ; i<EVALS ; i++){
 			if( evals[i].rating < evals[menor].rating){
-				menor = i;
+			menor = i;
 			}
 			if(rating > evals[menor].rating){
 				insertPos = menor;
@@ -357,72 +357,76 @@ void insertUsers(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long
 	fclose(usersFile);
 }
 
-void clearStringPos( char str[] ){
-    int i,j;
-    i = 0;
-    while(i<strlen(str)){
-        if (str[i]==' ' || str[i]==',') { 
-            for (j=i; j<strlen(str); j++)
-                str[j]=str[j+1];   
-        } 
-		  else 
-		  	   i++;
-    }
+void clearStringPos(char str[])
+{
+	int i, j;
+	i = 0;
+	while (i < strlen(str))
+	{
+		if (str[i] == ' ' || str[i] == ',')
+		{
+			for (j = i; j < strlen(str); j++)
+				str[j] = str[j + 1];
+		}
+		else
+			i++;
+	}
 }
 
 //insere os dados sobre os jogadores
 void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const char *fileName)
 {
 	Data *data;
-	FILE *players = fopen(fileName,"r");
+	FILE *players = fopen(fileName, "r");
 	char line[256];
-	char *first,*second,*third,*fourth,*fifth;
+	char *first, *second, *third, *fourth, *fifth;
 
 	fgets(line, 256, players);
-    while (fgets(line, 256, players))
-    {
+	while (fgets(line, 256, players))
+	{
 		data = malloc(sizeof(Data));
 
 		data->player_pos[0][0] = 0;
 		data->player_pos[1][0] = 0;
 		data->player_pos[2][0] = 0;
 
-		first = strtok(line,",");
-      second = strtok(NULL,",");
-		third = strtok(NULL,",");
+		first = strtok(line, ",");
+		second = strtok(NULL, ",");
+		third = strtok(NULL, ",");
 
 		*--second = *--third = '\0';
 		second++;
 		third++;
 
 		data->sofifa_id = (unsigned long)atol(first);
-		strcpy(data->name,second);
+		strcpy(data->name, second);
 
-		fourth = strtok(NULL,",");
-		if(!fourth) strtok(third,"\n");
+		fourth = strtok(NULL, ",");
+		if (!fourth)
+			strtok(third, "\n");
 		else
 		{
 			third++;
-			fifth = strtok(NULL,",");
-			if(!fifth) strtok(fourth,"\"");
+			fifth = strtok(NULL, ",");
+			if (!fifth)
+				strtok(fourth, "\"");
 			else
 			{
-				strtok(fifth,"\"");
+				strtok(fifth, "\"");
 				clearStringPos(fifth);
-				strcpy(&(data->player_pos[2][0]),fifth);
+				strcpy(&(data->player_pos[2][0]), fifth);
 			}
 			clearStringPos(fourth);
-			strcpy(&(data->player_pos[1][0]),fourth);
+			strcpy(&(data->player_pos[1][0]), fourth);
 		}
 		clearStringPos(third);
-		strcpy(&(data->player_pos[0][0]),third);
+		strcpy(&(data->player_pos[0][0]), third);
 		data->count = 0;
 		data->rating = 0;
 
-
-		insertTrie(root,data);
-		fifaIdInsertHT(fifaIdHT,data,m[fifaId]);
-    }
+		insertTrie(root, data);
+		fifaIdInsertHT(fifaIdHT, data, m[fifaId]);
+	}
 	fclose(players);
 }
 //insere os dados sobre as tags
@@ -480,13 +484,15 @@ unsigned long *fineTune(char fileNames[][100])
 			{
 				TrieNode *root = newNode();
 				HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
-				HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
-				User* users = (User*)malloc(sizeof(User)*m[userId]);
-				initHT(fifaIdHT,m[fifaId]);
-				initHT(userIdHT,m[userId]);
-				for(int i=0 ; i<sizeof(users)/sizeof(User) ; i++){
+				HT *userIdHT = (HT *)malloc(m[userId] * sizeof(HT));
+				User *users = (User *)malloc(sizeof(User) * m[userId]);
+				initHT(fifaIdHT, m[fifaId]);
+				initHT(userIdHT, m[userId]);
+				for (int i = 0; i < sizeof(users) / sizeof(User); i++)
+				{
 					users[i].id = -1;
-					for(int j=0 ; j<EVALS ; j++){
+					for (int j = 0; j < EVALS; j++)
+					{
 						users[i].evals[j].sofifa_id = 0;
 					}
 				}
@@ -558,90 +564,99 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 }
 
 // Para a funcao quicksort Data
-void swapData(Data** vet, int p1, int p2){
-	Data* aux = vet[p1];
+void swapData(Data **vet, int p1, int p2)
+{
+	Data *aux = vet[p1];
 	vet[p1] = vet[p2];
 	vet[p2] = aux;
 }
 // Para a funcao quicksort Data
-int partition(Data **data, int low, int high){
-    Data *pivot = data[high];
-    int i = low - 1;
-	 
-    for (int j = low; j <= high-1; j++)
-    {
-        if (data[j]->rating/data[j]->count >= pivot->rating/pivot->count)
-        {
-            i++;
-            swapData(data, i, j);
-        }
-    }
-    swapData(data, i + 1,high);
-    return (i + 1);
+int partition(Data **data, int low, int high)
+{
+	Data *pivot = data[high];
+	int i = low - 1;
+
+	for (int j = low; j <= high - 1; j++)
+	{
+		if (data[j]->rating / data[j]->count >= pivot->rating / pivot->count)
+		{
+			i++;
+			swapData(data, i, j);
+		}
+	}
+	swapData(data, i + 1, high);
+	return (i + 1);
 }
 
 // quicksort que ordena um vetor de ponteiros para Data
-void quicksort(Data **data, int low, int high){
-    if (low < high)
-    {
-        int pi = partition(data, low, high);
-        quicksort(data, low, pi - 1);
-        quicksort(data, pi + 1, high);
-    }
+void quicksort(Data **data, int low, int high)
+{
+	if (low < high)
+	{
+		int pi = partition(data, low, high);
+		quicksort(data, low, pi - 1);
+		quicksort(data, pi + 1, high);
+	}
 }
 
-
 // Para a funcao quicksort Eval
-void swapEval(Eval* vet, int p1, int p2){
+void swapEval(Eval *vet, int p1, int p2)
+{
 	Eval aux;
 	aux.sofifa_id = vet[p1].sofifa_id;
 	aux.rating = vet[p1].rating;
 
 	vet[p1].sofifa_id = vet[p2].sofifa_id;
 	vet[p1].rating = vet[p2].rating;
-	
+
 	vet[p2].sofifa_id = aux.sofifa_id;
 	vet[p2].rating = aux.rating;
 }
 
 // Para a funcao quicksort Eval
-int partitionEval(Eval* evals, int low, int high){
-    Eval pivot = evals[high];
-    int i = low - 1;
-	 
-    for (int j = low; j <= high-1; j++)
-    {
-        if (evals[j].rating >= pivot.rating)
-        {
-            i++;
-            swapEval(evals, i, j);
-        }
-    }
-    swapEval(evals, i + 1,high);
-    return (i + 1);
+int partitionEval(Eval *evals, int low, int high)
+{
+	Eval pivot = evals[high];
+	int i = low - 1;
+
+	for (int j = low; j <= high - 1; j++)
+	{
+		if (evals[j].rating >= pivot.rating)
+		{
+			i++;
+			swapEval(evals, i, j);
+		}
+	}
+	swapEval(evals, i + 1, high);
+	return (i + 1);
 }
 
 // quicksort que ordena um vetor Evals
-void quickSortEval(Eval *evals, int low, int high){
-    if (low < high)
-    {
-        int pi = partitionEval(evals, low, high);
-        quickSortEval(evals, low, pi - 1);
-        quickSortEval(evals, pi + 1, high);
-    }
+void quickSortEval(Eval *evals, int low, int high)
+{
+	if (low < high)
+	{
+		int pi = partitionEval(evals, low, high);
+		quickSortEval(evals, low, pi - 1);
+		quickSortEval(evals, pi + 1, high);
+	}
 }
 
-
 // Olha para um Data e verifica a presenca de um TAG
-int hasTag(Data* data, char* tag){
-	if( !strcmp( data->player_pos[0], tag) || !strcmp( data->player_pos[1], tag) || !strcmp( data->player_pos[2], tag)) return 1;
+int hasTag(Data *data, char *tag)
+{
+	if (!strcmp(data->player_pos[0], tag) || !strcmp(data->player_pos[1], tag) || !strcmp(data->player_pos[2], tag))
+		return 1;
 	return 0;
 }
 
-void stringUpperCase(char* str){
-	for (int i = 0; str[i]!='\0'; i++) {
-   	if(str[i] >= 'a' && str[i] <= 'z') {
-      	str[i] = str[i] -32;
-   	}
+void stringUpperCase(char *str)
+{
+	for (int i = 0; str[i] != '\0'; i++)
+	{
+		if (str[i] >= 'a' && str[i] <= 'z')
+		{
+			str[i] = str[i] - 32;
+		}
 	}
 }
