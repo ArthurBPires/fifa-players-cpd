@@ -89,5 +89,6 @@ unsigned long* fineTune(char fileNames[][100]);
 void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m);
 void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]);
 void quicksort(Data **data, int low, int high);
+void quickSortEval(Eval evals[], int low, int high);
 int hasTag(Data* data, char* tag);
 void stringUpperCase(char* str);

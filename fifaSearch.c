@@ -455,56 +455,64 @@ void insertTags(TrieNode *root, HT *fifaIdHT, textHT *tagHT, const unsigned long
     }
 	fclose(tags);
 }
+
 //Acha os melhores valores para m
-// unsigned long *fineTune(char fileNames[][100])
-// {
-// 	int i,j;
-// 	const int n = 1;
-// 	unsigned long recordM[2],*m = (unsigned long*)malloc(2*sizeof(unsigned long));
-// 	const int tries=3;
-// 	double timeTaken, recordTime;
-// 	clock_t time;
+unsigned long *fineTune(char fileNames[][100])
+{
+	int i,j;
+	const int n = 1;
+	unsigned long recordM[2],*m = (unsigned long*)malloc(2*sizeof(unsigned long));
+	const int tries=3;
+	double timeTaken, recordTime;
+	clock_t time;
 
-// 	m[0] = 20000;
-// 	m[1] = 138493;
+	m[0] = 20000;
+	m[1] = 138493;
 
-// 	for(i=0;i<n;i++)
-// 	{
-// 		recordTime = INT_MAX;
-// 		for(m[i]=1000000;m[i]<=500000; m[i]*=2)
-// 		{
-// 			printf("Testes para m[%d] = %lu...", i,m[i]);
-// 			timeTaken = 0;
-// 			for(j=0;j<tries;j++)
-// 			{
-// 				TrieNode *root = newNode();
-// 				HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
-// 				HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
-// 				initHT(fifaIdHT,m[fifaId]);
-// 				initHT(userIdHT,m[userId]);
+	for(i=0;i<n;i++)
+	{
+		recordTime = INT_MAX;
+		for(m[i]=1000000;m[i]<=500000; m[i]*=2)
+		{
+			printf("Testes para m[%d] = %lu...", i,m[i]);
+			timeTaken = 0;
+			for(j=0;j<tries;j++)
+			{
+				TrieNode *root = newNode();
+				HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
+				HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
+				User* users = (User*)malloc(sizeof(User)*m[userId]);
+				initHT(fifaIdHT,m[fifaId]);
+				initHT(userIdHT,m[userId]);
+				for(int i=0 ; i<sizeof(users)/sizeof(User) ; i++){
+					users[i].id = -1;
+					for(int j=0 ; j<EVALS ; j++){
+						users[i].evals[j].sofifa_id = 0;
+					}
+				}
 
-// 				time = clock();
-// 				insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
-// 				insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
-// 				time = clock() - time;
-// 				timeTaken += ((double)(time)/CLOCKS_PER_SEC);
+				time = clock();
+				insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
+				insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId], users);
+				time = clock() - time;
+				timeTaken += ((double)(time)/CLOCKS_PER_SEC);
 
-// 				thanoSnap(root,fifaIdHT,userIdHT,m);
-// 			}
-// 			timeTaken /= tries;
-// 			if(timeTaken<recordTime)
-// 			{
-// 				recordTime = timeTaken;
-// 				recordM[i] = m[i];
-// 			}
-// 			printf(" OK\n");
-// 		}
-// 		m[i] = recordM[i];
-// 	}
-// 	printf("fineTune() achou os seguintes valores de m: %lu, %lu.\n",m[fifaId],m[userId]);
+				thanoSnap(root,fifaIdHT,userIdHT,m);
+			}
+			timeTaken /= tries;
+			if(timeTaken<recordTime)
+			{
+				recordTime = timeTaken;
+				recordM[i] = m[i];
+			}
+			printf(" OK\n");
+		}
+		m[i] = recordM[i];
+	}
+	printf("fineTune() achou os seguintes valores de m: %lu, %lu.\n",m[fifaId],m[userId]);
 
-// 	return m;
-// }
+	return m;
+}
 //Delata todas as estruturas, liberando a memória ocupada por elas
 void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m)
 {
@@ -512,77 +520,50 @@ void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *
 	freeHT(fifaIdHT,m[fifaId]);
 	freeHT(userIdHT,m[userId]);
 }
+
 //Lida com os argumentos passados
-// void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100])
-// {
-// 	int flagf,flagp[2];
-// 	flagf = flagp[0] = 0;
-// 	for (int i=1; i<argc; i++)
-// 	{
-// 		if(!strcmp("-f",argv[i]) || !strcmp("-fine-tune",argv[i]))
-// 			flagf++;
-// 		else if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+3)))
-// 		{
-// 			flagp[0]++;
-// 			flagp[1]=i;
-// 		}
-// 	}
-// 	if(flagp[0])
-// 	{
-// 	strcpy(fileNames[fifaId],argv[flagp[1]+1]);
-// 	strcpy(fileNames[userId],argv[flagp[1]+2]);
-// 	strcpy(fileNames[tag],argv[flagp[1]+3]);
-// 	}
-// 	if(flagf)
-// 	{
-// 	unsigned long *mFound = fineTune(fileNames);
-// 	m[fifaId] = mFound[fifaId];
-// 	m[userId] = mFound[userId];
-// 	free(mFound);
-// 	}
-// 	if(!flagf && !flagp[0])
-// 	{
-// 	printf("Comando desconhecido.\n");
-// 	printf("Comandos disponiveis:\n-f\n-fine-tune\n");
-// 	abort();
-// 	}
-// }
+void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100])
+{
+	int flagf,flagp[2];
+	flagf = flagp[0] = 0;
+	for (int i=1; i<argc; i++)
+	{
+		if(!strcmp("-f",argv[i]) || !strcmp("-fine-tune",argv[i]))
+			flagf++;
+		else if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+3)))
+		{
+			flagp[0]++;
+			flagp[1]=i;
+		}
+	}
+	if(flagp[0])
+	{
+	strcpy(fileNames[fifaId],argv[flagp[1]+1]);
+	strcpy(fileNames[userId],argv[flagp[1]+2]);
+	strcpy(fileNames[tag],argv[flagp[1]+3]);
+	}
+	if(flagf)
+	{
+	unsigned long *mFound = fineTune(fileNames);
+	m[fifaId] = mFound[fifaId];
+	m[userId] = mFound[userId];
+	free(mFound);
+	}
+	if(!flagf && !flagp[0])
+	{
+	printf("Comando desconhecido.\n");
+	printf("Comandos disponiveis:\n-f\n-fine-tune\n");
+	abort();
+	}
+}
 
-// void swapData(Data *d1, Data *d2) {
-// 	Data temp;
-// 	temp.count = d1->count;
-// 	temp.sofifa_id = d1->sofifa_id;
-// 	strcpy(temp.name, d1->name);
-// 	temp.rating = d1->rating;
-// 	strcpy(temp.player_pos[0], d1->player_pos[0]);
-// 	strcpy(temp.player_pos[1], d1->player_pos[1]);
-// 	strcpy(temp.player_pos[2], d1->player_pos[2]);
-
-// 	d1->count = d2->count;
-// 	d1->sofifa_id = d2->sofifa_id;
-// 	strcpy(d1->name, d2->name);
-// 	d1->rating = d2->rating;
-// 	strcpy(d1->player_pos[0], d2->player_pos[0]);
-// 	strcpy(d1->player_pos[1], d2->player_pos[1]);
-// 	strcpy(d1->player_pos[2], d2->player_pos[2]);
-
-// 	d2->count = temp.count;
-// 	d2->sofifa_id = temp.sofifa_id;
-// 	strcpy(d2->name, temp.name);
-// 	d2->rating = temp.rating;
-// 	strcpy(d2->player_pos[0], temp.player_pos[0]);
-// 	strcpy(d2->player_pos[1], temp.player_pos[1]);
-// 	strcpy(d2->player_pos[2], temp.player_pos[2]);
-
-// }
-
-// Para a funcao quicksort
+// Para a funcao quicksort Data
 void swapData(Data** vet, int p1, int p2){
 	Data* aux = vet[p1];
 	vet[p1] = vet[p2];
 	vet[p2] = aux;
 }
-// Para a funcao quicksort
+// Para a funcao quicksort Data
 int partition(Data **data, int low, int high){
     Data *pivot = data[high];
     int i = low - 1;
@@ -608,6 +589,48 @@ void quicksort(Data **data, int low, int high){
         quicksort(data, pi + 1, high);
     }
 }
+
+
+// Para a funcao quicksort Eval
+void swapEval(Eval* vet, int p1, int p2){
+	Eval aux;
+	aux.sofifa_id = vet[p1].sofifa_id;
+	aux.rating = vet[p1].rating;
+
+	vet[p1].sofifa_id = vet[p2].sofifa_id;
+	vet[p1].rating = vet[p2].rating;
+	
+	vet[p2].sofifa_id = aux.sofifa_id;
+	vet[p2].rating = aux.rating;
+}
+
+// Para a funcao quicksort Eval
+int partitionEval(Eval* evals, int low, int high){
+    Eval pivot = evals[high];
+    int i = low - 1;
+	 
+    for (int j = low; j <= high-1; j++)
+    {
+        if (evals[j].rating >= pivot.rating)
+        {
+            i++;
+            swapEval(evals, i, j);
+        }
+    }
+    swapEval(evals, i + 1,high);
+    return (i + 1);
+}
+
+// quicksort que ordena um vetor Evals
+void quickSortEval(Eval *evals, int low, int high){
+    if (low < high)
+    {
+        int pi = partitionEval(evals, low, high);
+        quickSortEval(evals, low, pi - 1);
+        quickSortEval(evals, pi + 1, high);
+    }
+}
+
 
 // Olha para um Data e verifica a presenca de um TAG
 int hasTag(Data* data, char* tag){

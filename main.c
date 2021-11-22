@@ -120,20 +120,22 @@ int main(int argc, char **argv)
         if(user<1 || user>USERS) printf("user_id nao encontrado.\n");
         else
         {
-          list = userIdsearchHT(userIdHT,user);
-          if(!list) printf("user_id nao encontrado.\n");
-          else
-          {	 
-				 printTableTop(0);
-				 printf("\tuser_rating\n");
-				for(int i=0 ; i<EVALS ; i++){
-					if(users[user].evals[i].sofifa_id != 0){
-						printData( *fifaIdsearchHTbysofifaID(fifaIdHT,users[user].evals[i].sofifa_id,m[fifaId]),0);
-						printf("\t%.1f\n", users[user].evals[i].rating);
-					}
-				}
+				printTableTop(0);
+				printf("\tuser_rating\n");
 				
-          }
+				if(users[user].id != -1){
+					for(int i=0 ; i<EVALS ; i++){
+						if(users[user].evals[i].sofifa_id != 0){
+
+							quickSortEval(users[user].evals, 0,EVALS-1);
+
+							printData( *fifaIdsearchHTbysofifaID(fifaIdHT,users[user].evals[i].sofifa_id,m[fifaId]),0);
+							printf("\t%.1f\n", users[user].evals[i].rating);
+						}
+					}
+				}else{
+					printf("user_id nao encontrado.\n");
+				}
         }
       }
       else if(1 || cmd[0]=='t' && cmd[1]=='o' && cmd[2]=='p'){
