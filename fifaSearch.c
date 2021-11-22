@@ -125,7 +125,7 @@ void initHT(HT* hashTable, const unsigned long m) {
 	for(int i = 0; i<m; i++)
 	{
 		hashTable[i].next = NULL;
-		hashTable[i].data = NULL;
+		//hashTable[i].data = NULL;  //Devido a específica implementação feita, essa atribuição não precisa ser feita.
 	}
 }
 void textInitHT(textHT* hashTable, const unsigned long m) {
@@ -136,20 +136,28 @@ void textInitHT(textHT* hashTable, const unsigned long m) {
 		strcpy(hashTable[i].text,"");
 	}
 }
+void floatInitHT(floatHT* hashTable, const unsigned long m) {
+	for(int i = 0; i<m; i++)
+	{
+		hashTable[i].next = NULL;
+		//hashTable[i].data = NULL;  //Devido a específica implementação feita, essa atribuição não precisa ser feita.
+	}
+}
 
 //Função geral de hashing
 unsigned long hash(char *text, const enum keyType type, const unsigned long m, const int p) {
 	unsigned long long hash=0;	//Atualmente não está sendo usada por fifaId ou userId por buscarmos máxima velocidade de processamento.
 	switch (type)
 	{
+		case tag:
+			for (int i = 0; i < strlen(text); i++)
+      			hash = (hash * p + (text[i] - 'a' + 1));
+		break;
 		case fifaId:
 		break;
 		case userId:
 		break;
-		case tag:
 		case pos:
-			for (int i = 0; i < strlen(text); i++)
-      			hash = (hash * p + (text[i] - 'a' + 1));
 		break;
 		default:
 			printf("Erro ao iniciar HashTable\n");
@@ -187,15 +195,16 @@ Data *fifaIdsearchHTbysofifaID(HT *hashTable, unsigned long sofifa_id, unsigned 
 
 
 /*insere os dados do usuário no começo da corrente referente a chave.	*/
-void userIdInsertHT(HT *hashTable, Data *data, const unsigned long key) {
-	HT *x = hashTable[key].next;
-	hashTable[key].next = (HT*)malloc(sizeof(HT));
+void userIdInsertHT(floatHT *hashTable, Data *data, const unsigned long key, float userRating) {
+	floatHT *x = hashTable[key].next;
+	hashTable[key].next = (floatHT*)malloc(sizeof(floatHT));
+	hashTable[key].next->userRating = userRating; 
 	hashTable[key].next->data = data;
 	hashTable[key].next->next = x;
 }
 /*Retorna o primeiro nodo de dados do usuário. Para ler todos os nodos do usuário, basta usar 
 o nodo retornado e seguir a corrente de ponteiros até o fim. Retorna NULL caso não encontre	*/
-HT *userIdsearchHT(HT *hashTable, const unsigned long key) {
+floatHT *userIdsearchHT(floatHT *hashTable, const unsigned long key) {
 	return hashTable[key-1].next;
 }
 //Insere os dados no final da corrente correspondente a key, caso eles ainda não tenham sido inseridos.
@@ -261,6 +270,28 @@ void freeHT(HT *hashTable, const unsigned long m) {
     if(hashTable[j].next != NULL) freeHTCell(hashTable[j].next);
   free(hashTable);
 }
+//Libera o espaço de uma corrente de celulas
+void textFreeHTCell(textHT *hashCell) {
+  if(hashCell->next != NULL) textFreeHTCell(hashCell->next);
+  free(hashCell);
+}
+//Chama freeHTCell para cada espaço da HT
+void textFreeHT(textHT *hashTable, const unsigned long m) {
+  for(int j=0; j<m; j++)
+    if(hashTable[j].next != NULL) textFreeHTCell(hashTable[j].next);
+  free(hashTable);
+}
+//Libera o espaço de uma corrente de celulas
+void floatFreeHTCell(floatHT *hashCell) {
+  if(hashCell->next != NULL) floatFreeHTCell(hashCell->next);
+  free(hashCell);
+}
+//Chama freeHTCell para cada espaço da HT
+void floatFreeHT(floatHT *hashTable, const unsigned long m) {
+  for(int j=0; j<m; j++)
+    if(hashTable[j].next != NULL) floatFreeHTCell(hashTable[j].next);
+  free(hashTable);
+}
 
 /*	Uso Geral	*/
 
@@ -290,36 +321,8 @@ void printData(const Data data, int breakLine)
 	printf("%d",data.count);
 	if(breakLine) printf("\n");
 }
-
-void insertEval(User* users, int id, unsigned long sofifa_id, float rating){
-	int insertPos = -1;
-	Eval *evals = users[id].evals;
-	for(int i = 0; i < EVALS; i++ ){
-		if(evals[i].sofifa_id == 0){
-			insertPos= i;
-			i = EVALS;
-		}
-	}if(insertPos == -1){
-		int menor = 0;
-		for(int i=0 ; i<EVALS ; i++){
-			if( evals[i].rating < evals[menor].rating){
-			menor = i;
-			}
-			if(rating > evals[menor].rating){
-				insertPos = menor;
-			}
-		}
-	}
-	if(insertPos != -1){
-		users[id].evals[insertPos].sofifa_id = sofifa_id;
-		users[id].evals[insertPos].rating = rating;
-	}
-
-}
-
-
 //insere os dados sobre os usuários
-void insertUsers(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m, const char *fileName, User* users)
+void insertUsers(TrieNode *root, HT *fifaIdHT, floatHT *userIdHT, const unsigned long *m, const char *fileName)
 {
 	Data *data;
 	Data search;
@@ -345,88 +348,77 @@ void insertUsers(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long
 		data->rating += (float)atof(third);
 		data->count++;
 
-
-		int userId = atoi(first);
-		if(users[userId].id == -1){
-			users[userId].id = userId;
-		}
-		insertEval(users, userId, (unsigned long)atol(second),(float)atof(third));
-
-		userIdInsertHT(userIdHT,data,(const unsigned long)(atol(first)-1));
+		userIdInsertHT(userIdHT,data,(const unsigned long)(atol(first)-1),(float)atof(third));
     }
 	fclose(usersFile);
 }
 
-void clearStringPos(char str[])
-{
-	int i, j;
-	i = 0;
-	while (i < strlen(str))
-	{
-		if (str[i] == ' ' || str[i] == ',')
-		{
-			for (j = i; j < strlen(str); j++)
-				str[j] = str[j + 1];
-		}
-		else
-			i++;
-	}
+void clearStringPos( char str[] ){
+    int i,j;
+    i = 0;
+    while(i<strlen(str)){
+        if (str[i]==' ' || str[i]==',') { 
+            for (j=i; j<strlen(str); j++)
+                str[j]=str[j+1];   
+        } 
+		  else 
+		  	   i++;
+    }
 }
 
 //insere os dados sobre os jogadores
 void insertPlayers(TrieNode *root, HT *fifaIdHT, const unsigned long *m, const char *fileName)
 {
 	Data *data;
-	FILE *players = fopen(fileName, "r");
+	FILE *players = fopen(fileName,"r");
 	char line[256];
-	char *first, *second, *third, *fourth, *fifth;
+	char *first,*second,*third,*fourth,*fifth;
 
 	fgets(line, 256, players);
-	while (fgets(line, 256, players))
-	{
+    while (fgets(line, 256, players))
+    {
 		data = malloc(sizeof(Data));
 
 		data->player_pos[0][0] = 0;
 		data->player_pos[1][0] = 0;
 		data->player_pos[2][0] = 0;
 
-		first = strtok(line, ",");
-		second = strtok(NULL, ",");
-		third = strtok(NULL, ",");
+		first = strtok(line,",");
+      second = strtok(NULL,",");
+		third = strtok(NULL,",");
 
 		*--second = *--third = '\0';
 		second++;
 		third++;
 
 		data->sofifa_id = (unsigned long)atol(first);
-		strcpy(data->name, second);
+		strcpy(data->name,second);
 
-		fourth = strtok(NULL, ",");
-		if (!fourth)
-			strtok(third, "\n");
+		fourth = strtok(NULL,",");
+		if(!fourth) strtok(third,"\n");
 		else
 		{
 			third++;
-			fifth = strtok(NULL, ",");
-			if (!fifth)
-				strtok(fourth, "\"");
+			fifth = strtok(NULL,",");
+			if(!fifth) strtok(fourth,"\"");
 			else
 			{
-				strtok(fifth, "\"");
+				strtok(fifth,"\"");
 				clearStringPos(fifth);
-				strcpy(&(data->player_pos[2][0]), fifth);
+				strcpy(&(data->player_pos[2][0]),fifth);
 			}
 			clearStringPos(fourth);
-			strcpy(&(data->player_pos[1][0]), fourth);
+			strcpy(&(data->player_pos[1][0]),fourth);
 		}
 		clearStringPos(third);
-		strcpy(&(data->player_pos[0][0]), third);
+		strcpy(&(data->player_pos[0][0]),third);
 		data->count = 0;
 		data->rating = 0;
 
-		insertTrie(root, data);
-		fifaIdInsertHT(fifaIdHT, data, m[fifaId]);
-	}
+
+		insertTrie(root,data);
+		fifaIdInsertHT(fifaIdHT,data,m[fifaId]);
+    }
 	fclose(players);
 }
 //insere os dados sobre as tags
@@ -459,84 +451,76 @@ void insertTags(TrieNode *root, HT *fifaIdHT, textHT *tagHT, const unsigned long
     }
 	fclose(tags);
 }
-
 //Acha os melhores valores para m
-unsigned long *fineTune(char fileNames[][100])
-{
-	int i,j;
-	const int n = 1;
-	unsigned long recordM[2],*m = (unsigned long*)malloc(2*sizeof(unsigned long));
-	const int tries=3;
-	double timeTaken, recordTime;
-	clock_t time;
+// unsigned long *fineTune(char fileNames[][100])
+// {
+// 	int i,j;
+// 	const int n = 1;
+// 	unsigned long recordM[2],*m = (unsigned long*)malloc(2*sizeof(unsigned long));
+// 	const int tries=3;
+// 	double timeTaken, recordTime;
+// 	clock_t time;
 
-	m[0] = 20000;
-	m[1] = 138493;
+// 	m[0] = 20000;
+// 	m[1] = 138493;
 
-	for(i=0;i<n;i++)
-	{
-		recordTime = INT_MAX;
-		for(m[i]=1000000;m[i]<=500000; m[i]*=2)
-		{
-			printf("Testes para m[%d] = %lu...", i,m[i]);
-			timeTaken = 0;
-			for(j=0;j<tries;j++)
-			{
-				TrieNode *root = newNode();
-				HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
-				HT *userIdHT = (HT *)malloc(m[userId] * sizeof(HT));
-				User *users = (User *)malloc(sizeof(User) * m[userId]);
-				initHT(fifaIdHT, m[fifaId]);
-				initHT(userIdHT, m[userId]);
-				for (int i = 0; i < sizeof(users) / sizeof(User); i++)
-				{
-					users[i].id = -1;
-					for (int j = 0; j < EVALS; j++)
-					{
-						users[i].evals[j].sofifa_id = 0;
-					}
-				}
+// 	for(i=0;i<n;i++)
+// 	{
+// 		recordTime = INT_MAX;
+// 		for(m[i]=1000000;m[i]<=500000; m[i]*=2)
+// 		{
+// 			printf("Testes para m[%d] = %lu...", i,m[i]);
+// 			timeTaken = 0;
+// 			for(j=0;j<tries;j++)
+// 			{
+// 				TrieNode *root = newNode();
+// 				HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
+// 				HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
+// 				initHT(fifaIdHT,m[fifaId]);
+// 				initHT(userIdHT,m[userId]);
 
-				time = clock();
-				insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
-				insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId], users);
-				time = clock() - time;
-				timeTaken += ((double)(time)/CLOCKS_PER_SEC);
+// 				time = clock();
+// 				insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
+// 				insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
+// 				time = clock() - time;
+// 				timeTaken += ((double)(time)/CLOCKS_PER_SEC);
 
-				thanoSnap(root,fifaIdHT,userIdHT,m);
-			}
-			timeTaken /= tries;
-			if(timeTaken<recordTime)
-			{
-				recordTime = timeTaken;
-				recordM[i] = m[i];
-			}
-			printf(" OK\n");
-		}
-		m[i] = recordM[i];
-	}
-	printf("fineTune() achou os seguintes valores de m: %lu, %lu.\n",m[fifaId],m[userId]);
+// 				//thanoSnap(root,fifaIdHT,userIdHT,m);
+// 			}
+// 			timeTaken /= tries;
+// 			if(timeTaken<recordTime)
+// 			{
+// 				recordTime = timeTaken;
+// 				recordM[i] = m[i];
+// 			}
+// 			printf(" OK\n");
+// 		}
+// 		m[i] = recordM[i];
+// 	}
+// 	printf("fineTune() achou os seguintes valores de m: %lu, %lu.\n",m[fifaId],m[userId]);
 
-	return m;
-}
+// 	return m;
+// }
 //Delata todas as estruturas, liberando a memória ocupada por elas
-void thanoSnap(TrieNode *root, HT *fifaIdHT, HT *userIdHT, const unsigned long *m)
+void thanoSnap(TrieNode *root, HT *fifaIdHT, floatHT *userIdHT, textHT *tagHT, const unsigned long *m)
 {
 	freeTrie(root);
 	freeHT(fifaIdHT,m[fifaId]);
-	freeHT(userIdHT,m[userId]);
+	floatFreeHT(userIdHT,m[userId]);
+	textFreeHT(tagHT,m[tag]);
 }
-
-//Lida com os argumentos passados
+// Lida com os argumentos passados
 void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100])
 {
 	int flagf,flagp[2];
 	flagf = flagp[0] = 0;
 	for (int i=1; i<argc; i++)
 	{
+		/*
+			// fineTune momentâneamente inutilizada
 		if(!strcmp("-f",argv[i]) || !strcmp("-fine-tune",argv[i]))
 			flagf++;
-		else if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+3)))
+		else*/ if((!strcmp("-p",argv[i]) || !strcmp("-path",argv[i])) && (argc>(i+3)))
 		{
 			flagp[0]++;
 			flagp[1]=i;
@@ -548,18 +532,20 @@ void argOpt(const int argc, char **argv, unsigned long *m, char fileNames[][100]
 	strcpy(fileNames[userId],argv[flagp[1]+2]);
 	strcpy(fileNames[tag],argv[flagp[1]+3]);
 	}
+	/*
 	if(flagf)
 	{
-	unsigned long *mFound = fineTune(fileNames);
-	m[fifaId] = mFound[fifaId];
-	m[userId] = mFound[userId];
-	free(mFound);
+		unsigned long *mFound = fineTune(fileNames);
+		m[fifaId] = mFound[fifaId];
+		m[userId] = mFound[userId];
+		free(mFound);
 	}
-	if(!flagf && !flagp[0])
+	*/
+	if(!!flagp[0])
 	{
-	printf("Comando desconhecido.\n");
-	printf("Comandos disponiveis:\n-f\n-fine-tune\n");
-	abort();
+		printf("Comando desconhecido.\n");
+		printf("Comandos disponiveis:\n-f\n-fine-tune\n");
+		abort();
 	}
 }
 
@@ -642,21 +628,44 @@ void quickSortEval(Eval *evals, int low, int high)
 	}
 }
 
+// void swapData(Data *d1, Data *d2) {
+// 	Data temp;
+// 	temp.count = d1->count;
+// 	temp.sofifa_id = d1->sofifa_id;
+// 	strcpy(temp.name, d1->name);
+// 	temp.rating = d1->rating;
+// 	strcpy(temp.player_pos[0], d1->player_pos[0]);
+// 	strcpy(temp.player_pos[1], d1->player_pos[1]);
+// 	strcpy(temp.player_pos[2], d1->player_pos[2]);
+
+// 	d1->count = d2->count;
+// 	d1->sofifa_id = d2->sofifa_id;
+// 	strcpy(d1->name, d2->name);
+// 	d1->rating = d2->rating;
+// 	strcpy(d1->player_pos[0], d2->player_pos[0]);
+// 	strcpy(d1->player_pos[1], d2->player_pos[1]);
+// 	strcpy(d1->player_pos[2], d2->player_pos[2]);
+
+// 	d2->count = temp.count;
+// 	d2->sofifa_id = temp.sofifa_id;
+// 	strcpy(d2->name, temp.name);
+// 	d2->rating = temp.rating;
+// 	strcpy(d2->player_pos[0], temp.player_pos[0]);
+// 	strcpy(d2->player_pos[1], temp.player_pos[1]);
+// 	strcpy(d2->player_pos[2], temp.player_pos[2]);
+
+// }
+
 // Olha para um Data e verifica a presenca de um TAG
-int hasTag(Data *data, char *tag)
-{
-	if (!strcmp(data->player_pos[0], tag) || !strcmp(data->player_pos[1], tag) || !strcmp(data->player_pos[2], tag))
-		return 1;
+int hasTag(Data* data, char* tag){
+	if( !strcmp( data->player_pos[0], tag) || !strcmp( data->player_pos[1], tag) || !strcmp( data->player_pos[2], tag)) return 1;
 	return 0;
 }
 
-void stringUpperCase(char *str)
-{
-	for (int i = 0; str[i] != '\0'; i++)
-	{
-		if (str[i] >= 'a' && str[i] <= 'z')
-		{
-			str[i] = str[i] - 32;
-		}
+void stringUpperCase(char* str){
+	for (int i = 0; str[i]!='\0'; i++) {
+   	if(str[i] >= 'a' && str[i] <= 'z') {
+      	str[i] = str[i] -32;
+   	}
 	}
 }
