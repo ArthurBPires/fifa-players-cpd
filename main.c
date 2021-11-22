@@ -30,16 +30,23 @@ int main(int argc, char **argv)
     unsigned long m[] = {20000,USERS,20000}; //fifaid min = 41, fifaid max = 199987. Total = 3014 fifaids.
     char fileNames[][100] = {"players.csv","rating.csv","tags.csv"};
     
-    if(argc>1) argOpt(argc,argv,m,fileNames);
+    //if(argc>1) argOpt(argc,argv,m,fileNames);
 
     HT *fifaIdHT = (HT*)malloc(m[fifaId]*sizeof(HT));
     HT *userIdHT = (HT*)malloc(m[userId]*sizeof(HT));
     textHT *tagHT = (textHT*)malloc(m[tag]*sizeof(textHT));
+	 User* users = (User*)malloc(sizeof(User)*m[userId]);
     Data data;
     initHT(fifaIdHT,m[fifaId]);
     initHT(userIdHT,m[userId]);
     textInitHT(tagHT,m[tag]);
     char *breakPoint,*cmd,*search,input[NAME_SIZE];
+	 for(int i=0 ; i<sizeof(users)/sizeof(User) ; i++){
+		 users[i].id = -1;
+		 for(int j=0 ; j<EVALS ; j++){
+			 users[i].evals[j].sofifa_id = 0;
+		 }
+	 }
 
     printf("Inicializando dados...\n"); //Recorde: 7,28125 em Clang -Ofast
     double timeElapsed;
@@ -51,7 +58,7 @@ int main(int argc, char **argv)
     #endif
 
     insertPlayers(root,fifaIdHT,m,fileNames[fifaId]);
-    insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId]);
+    insertUsers(root,fifaIdHT,userIdHT,m,fileNames[userId],users);
     insertTags(root,fifaIdHT,tagHT,m,fileNames[tag]);
 
     #ifdef _WIN32
@@ -101,8 +108,8 @@ int main(int argc, char **argv)
         Data *found = fifaIdsearchHT(fifaIdHT,data,m[fifaId]);
         if(found)
         {
-          printTableTop();
-          printData(*found);
+          printTableTop(1);
+          printData(*found,1);
         }
         else printf("fifa_id nao encontrado.\n");
       }
@@ -117,30 +124,15 @@ int main(int argc, char **argv)
           if(!list) printf("user_id nao encontrado.\n");
           else
           {	 
-				// HT *listCount = list;
+				 printTableTop(0);
+				 printf("\tuser_rating\n");
+				for(int i=0 ; i<EVALS ; i++){
+					if(users[user].evals[i].sofifa_id != 0){
+						printData( *fifaIdsearchHTbysofifaID(fifaIdHT,users[user].evals[i].sofifa_id,m[fifaId]),0);
+						printf("\t%.1f\n", users[user].evals[i].rating);
+					}
+				}
 				
-				// int listSize = 0; 
-            // while(listCount)
-            // {
-				// 	listSize ++;
-				// 	listCount = listCount->next;
-            // }
-
-				// Data *data;
-				// data = (Data*)malloc(sizeof(Data)*listSize);
-				// for(int i=0 ; i<listSize ; i++){
-				// 	data[i] = *(list->data);
-				// 	list = list->next;
-				// }
-
-				// quicksort(data, 0, listSize-1);
-
-				// printTableTop();
-				// for( int i=0 ; i<20 ; i++){
-				// 	printData(data[i]);
-				// }
-
-				// free(data);
           }
         }
       }
@@ -205,11 +197,11 @@ int main(int argc, char **argv)
 				}
 			}
 			// imprime os dados na tela de forma ordenada
-			printTableTop();
+			printTableTop(1);
 			quicksort(bestNPlayers, 0, many-1);
 			for(int i=0 ; i<many ; i++){
 				if(bestNPlayers[i])
-					printData(*bestNPlayers[i]);
+					printData(*bestNPlayers[i],1);
 			}
 			free(bestNPlayers);
 		}
