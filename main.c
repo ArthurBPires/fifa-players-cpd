@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
     unsigned long m[] = {20000,USERS,20000};
-    char fileNames[][100] = {"players_clean2.csv","rating.csv","tags.csv"};
+    char fileNames[][100] = {"players.csv","rating.csv","tags.csv"};
     
     if(argc>1) argOpt(argc,argv,m,fileNames);
 
