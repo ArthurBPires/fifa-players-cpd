@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 {
     TrieNode *root = newNode();
     unsigned long m[] = {20000,USERS,20000};
-    char fileNames[][100] = {"players.csv","rating.csv","tags.csv"};
+    char fileNames[][100] = {"players_clean2.csv","rating.csv","tags.csv"};
     
     if(argc>1) argOpt(argc,argv,m,fileNames);
 
@@ -125,6 +125,11 @@ int main(int argc, char **argv)
             {
               if(x->userRating > list[i].userRating)
               {
+                for(int j=18;j>=i;j--)
+                {
+                  list[j+1].data = list[j].data;
+                  list[j+1].userRating = list[j].userRating;
+                }
                 list[i].data = x->data;
                 list[i].userRating = x->userRating;
                 break;
